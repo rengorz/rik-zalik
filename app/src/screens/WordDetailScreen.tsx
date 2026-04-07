@@ -7,9 +7,10 @@ import {
   Platform,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Audio } from 'expo-av';
 
 import { RootStackParamList } from '../navigation/types';
 import { DictionaryEntry, Meaning } from '../types/dictionary';
@@ -58,8 +59,12 @@ export default function WordDetailScreen() {
   const { entries } = route.params;
   const entry: DictionaryEntry = entries[0];
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
+  const [playing, setPlaying] = useState(false);
 
-  const phonetic = entry.phonetic ?? entry.phonetics.find(p => p.text)?.text;
+  const phoneticObj = entry.phonetics.find(p => p.text && p.audio) ?? entry.phonetics.find(p => p.text);
+  const phonetic = entry.phonetic ?? phoneticObj?.text;
+  const audioUrl = entry.phonetics.find(p => p.audio)?.audio;
+
   const favorited = isFavorite(entry.word);
   const shortDefinition = entry.meanings[0]?.definitions[0]?.definition ?? '';
 
@@ -68,6 +73,23 @@ export default function WordDetailScreen() {
       removeFavorite(entry.word);
     } else {
       addFavorite({ word: entry.word, phonetic, shortDefinition, savedAt: Date.now() });
+    }
+  };
+
+  const playAudio = async () => {
+    if (!audioUrl || playing) return;
+    try {
+      setPlaying(true);
+      const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
+      sound.setOnPlaybackStatusUpdate(status => {
+        if (status.isLoaded && status.didJustFinish) {
+          setPlaying(false);
+          sound.unloadAsync();
+        }
+      });
+      await sound.playAsync();
+    } catch {
+      setPlaying(false);
     }
   };
 
@@ -93,7 +115,20 @@ export default function WordDetailScreen() {
           <View style={styles.wordRow}>
             <View style={styles.wordMeta}>
               <Text style={styles.word}>{entry.word}</Text>
-              {phonetic && <Text style={styles.phonetic}>{phonetic}</Text>}
+              {phonetic && (
+                <View style={styles.phoneticRow}>
+                  <Text style={styles.phonetic}>{phonetic}</Text>
+                  {audioUrl && (
+                    <TouchableOpacity onPress={playAudio} hitSlop={10} disabled={playing}>
+                      <Ionicons
+                        name={playing ? 'volume-high' : 'volume-medium-outline'}
+                        size={20}
+                        color={playing ? colors.primary : colors.textPlaceholder}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
             </View>
             <TouchableOpacity onPress={toggleFavorite} hitSlop={12}>
               <Ionicons
@@ -156,6 +191,11 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '700',
     color: colors.textPrimary,
+  },
+  phoneticRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   phonetic: {
     fontSize: 18,
