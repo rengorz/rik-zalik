@@ -116,7 +116,7 @@ export default function SearchScreen() {
                 <Text style={styles.resultWord}>{firstEntry.word}</Text>
                 {phonetic && <Text style={styles.resultPhonetic}>{phonetic}</Text>}
               </View>
-              <TouchableOpacity onPress={toggleFavorite} hitSlop={12}>
+              <TouchableOpacity onPress={toggleFavorite} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
                 <Ionicons
                   name={favorited ? 'bookmark' : 'bookmark-outline'}
                   size={22}

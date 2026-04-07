@@ -156,7 +156,7 @@ export default function WordDetailScreen() {
                 <View style={styles.phoneticRow}>
                   <Text style={styles.phonetic}>{phonetic}</Text>
                   {audioUrl && (
-                    <TouchableOpacity onPress={playAudio} hitSlop={10} disabled={playing}>
+                    <TouchableOpacity onPress={playAudio} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} disabled={playing}>
                       <Ionicons
                         name={playing ? 'volume-high' : 'volume-medium-outline'}
                         size={20}
@@ -167,7 +167,7 @@ export default function WordDetailScreen() {
                 </View>
               )}
             </View>
-            <TouchableOpacity onPress={toggleFavorite} hitSlop={12}>
+            <TouchableOpacity onPress={toggleFavorite} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Ionicons
                 name={favorited ? 'bookmark' : 'bookmark-outline'}
                 size={24}

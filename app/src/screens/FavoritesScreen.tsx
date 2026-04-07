@@ -50,7 +50,7 @@ function FavoriteCard({
             {item.shortDefinition}
           </Text>
         </View>
-        <TouchableOpacity onPress={onRemove} hitSlop={12} style={styles.removeBtn}>
+        <TouchableOpacity onPress={onRemove} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={styles.removeBtn}>
           <Ionicons name="bookmark" size={22} color="#2563eb" />
         </TouchableOpacity>
       </View>
