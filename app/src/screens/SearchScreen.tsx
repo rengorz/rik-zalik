@@ -14,13 +14,16 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDictionary } from '../hooks/useDictionary';
+import { useFavorites } from '../hooks/useFavorites';
 import { RootStackParamList } from '../navigation/types';
+import { colors } from '../constants/colors';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const { entries, loading, error, search, clear } = useDictionary();
+  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const navigation = useNavigation<Nav>();
 
   const handleSearch = () => {
@@ -32,10 +35,21 @@ export default function SearchScreen() {
     clear();
   };
 
+  const idle = !loading && !error && entries.length === 0;
   const hasResult = entries.length > 0;
   const firstEntry = entries[0];
   const firstDefinition = firstEntry?.meanings[0]?.definitions[0]?.definition ?? '';
   const phonetic = firstEntry?.phonetic ?? firstEntry?.phonetics.find(p => p.text)?.text;
+  const favorited = firstEntry ? isFavorite(firstEntry.word) : false;
+
+  const toggleFavorite = () => {
+    if (!firstEntry) return;
+    if (favorited) {
+      removeFavorite(firstEntry.word);
+    } else {
+      addFavorite({ word: firstEntry.word, phonetic, shortDefinition: firstDefinition, savedAt: Date.now() });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -44,11 +58,11 @@ export default function SearchScreen() {
 
         <View style={styles.inputRow}>
           <View style={styles.inputWrap}>
-            <Ionicons name="search" size={18} color="#9ca3af" style={styles.inputIcon} />
+            <Ionicons name="search" size={18} color={colors.textPlaceholder} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Search a word..."
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textPlaceholder}
               value={query}
               onChangeText={setQuery}
               onSubmitEditing={handleSearch}
@@ -58,7 +72,7 @@ export default function SearchScreen() {
             />
             {query.length > 0 && (
               <TouchableOpacity onPress={handleClear}>
-                <Ionicons name="close-circle" size={18} color="#9ca3af" />
+                <Ionicons name="close-circle" size={18} color={colors.textPlaceholder} />
               </TouchableOpacity>
             )}
           </View>
@@ -73,14 +87,21 @@ export default function SearchScreen() {
 
         {loading && (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color="#2563eb" />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         )}
 
         {error && !loading && (
           <View style={styles.center}>
-            <Ionicons name="search-outline" size={48} color="#d1d5db" />
+            <Ionicons name="search-outline" size={48} color={colors.borderLight} />
             <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {idle && (
+          <View style={styles.center}>
+            <Ionicons name="book-outline" size={56} color={colors.borderLight} />
+            <Text style={styles.idleText}>Type a word to look it up</Text>
           </View>
         )}
 
@@ -91,8 +112,17 @@ export default function SearchScreen() {
             onPress={() => navigation.navigate('WordDetail', { entries })}
           >
             <View style={styles.resultHeader}>
-              <Text style={styles.resultWord}>{firstEntry.word}</Text>
-              {phonetic && <Text style={styles.resultPhonetic}>{phonetic}</Text>}
+              <View style={styles.resultTitleRow}>
+                <Text style={styles.resultWord}>{firstEntry.word}</Text>
+                {phonetic && <Text style={styles.resultPhonetic}>{phonetic}</Text>}
+              </View>
+              <TouchableOpacity onPress={toggleFavorite} hitSlop={12}>
+                <Ionicons
+                  name={favorited ? 'bookmark' : 'bookmark-outline'}
+                  size={22}
+                  color={favorited ? colors.primary : colors.textPlaceholder}
+                />
+              </TouchableOpacity>
             </View>
             <Text style={styles.resultPartOfSpeech}>
               {firstEntry.meanings[0]?.partOfSpeech}
@@ -102,7 +132,7 @@ export default function SearchScreen() {
             </Text>
             <View style={styles.resultFooter}>
               <Text style={styles.resultMore}>See full definition</Text>
-              <Ionicons name="chevron-forward" size={16} color="#2563eb" />
+              <Ionicons name="chevron-forward" size={16} color={colors.primary} />
             </View>
           </TouchableOpacity>
         )}
@@ -114,7 +144,7 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
@@ -124,7 +154,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0f172a',
+    color: colors.textPrimary,
     marginBottom: 20,
   },
   inputRow: {
@@ -136,7 +166,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 14,
     paddingHorizontal: 12,
     gap: 8,
@@ -152,19 +182,20 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     fontSize: 16,
-    color: '#0f172a',
+    color: colors.textPrimary,
+    ...(Platform.OS === 'web' ? ({ outlineWidth: 0 } as object) : {}),
   },
   searchBtn: {
-    backgroundColor: '#2563eb',
+    backgroundColor: colors.primary,
     borderRadius: 14,
     paddingHorizontal: 18,
     justifyContent: 'center',
   },
   searchBtnDisabled: {
-    backgroundColor: '#93c5fd',
+    backgroundColor: colors.primaryMuted,
   },
   searchBtnText: {
-    color: '#fff',
+    color: colors.surface,
     fontWeight: '600',
     fontSize: 15,
   },
@@ -176,11 +207,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#6b7280',
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+  idleText: {
+    fontSize: 16,
+    color: colors.textPlaceholder,
     textAlign: 'center',
   },
   resultCard: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 20,
     gap: 6,
@@ -191,27 +227,33 @@ const styles = StyleSheet.create({
   },
   resultHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  resultTitleRow: {
+    flexDirection: 'row',
     alignItems: 'baseline',
     gap: 10,
+    flex: 1,
   },
   resultWord: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#0f172a',
+    color: colors.textPrimary,
   },
   resultPhonetic: {
     fontSize: 15,
-    color: '#2563eb',
+    color: colors.primary,
   },
   resultPartOfSpeech: {
     fontSize: 13,
     fontStyle: 'italic',
-    color: '#9ca3af',
+    color: colors.textPlaceholder,
     marginBottom: 4,
   },
   resultDefinition: {
     fontSize: 15,
-    color: '#374151',
+    color: colors.textSecondary,
     lineHeight: 22,
   },
   resultFooter: {
@@ -221,7 +263,7 @@ const styles = StyleSheet.create({
   },
   resultMore: {
     fontSize: 14,
-    color: '#2563eb',
+    color: colors.primary,
     fontWeight: '600',
   },
 });

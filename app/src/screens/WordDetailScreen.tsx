@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RootStackParamList } from '../navigation/types';
 import { DictionaryEntry, Meaning } from '../types/dictionary';
+import { colors } from '../constants/colors';
 import { useFavorites } from '../hooks/useFavorites';
 
 type Route = RouteProp<RootStackParamList, 'WordDetail'>;
@@ -111,7 +112,7 @@ export default function WordDetailScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: colors.background,
   },
   scroll: {
     flex: 1,
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   headerCard: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 24,
     gap: 6,
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   meaningBlock: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 20,
     gap: 12,

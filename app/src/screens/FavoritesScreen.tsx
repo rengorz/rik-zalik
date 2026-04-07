@@ -15,6 +15,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { fetchWord } from '../services/dictionaryApi';
 import { RootStackParamList } from '../navigation/types';
 import { FavoriteWord } from '../types/dictionary';
+import { colors } from '../constants/colors';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -96,7 +97,7 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: colors.background,
   },
   list: {
     padding: 20,
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     ...Platform.select({
