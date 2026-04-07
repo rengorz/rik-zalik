@@ -73,17 +73,14 @@ export default function WordDetailScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity onPress={toggleFavorite} style={{ marginRight: 4 }}>
-          <Ionicons
-            name={favorited ? 'bookmark' : 'bookmark-outline'}
-            size={24}
-            color={favorited ? '#2563eb' : '#9ca3af'}
-          />
+      headerLeft: () => (
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={colors.primary} />
         </TouchableOpacity>
       ),
+      headerRight: undefined,
     });
-  }, [favorited]);
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -93,8 +90,19 @@ export default function WordDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerCard}>
-          <Text style={styles.word}>{entry.word}</Text>
-          {phonetic && <Text style={styles.phonetic}>{phonetic}</Text>}
+          <View style={styles.wordRow}>
+            <View style={styles.wordMeta}>
+              <Text style={styles.word}>{entry.word}</Text>
+              {phonetic && <Text style={styles.phonetic}>{phonetic}</Text>}
+            </View>
+            <TouchableOpacity onPress={toggleFavorite} hitSlop={12}>
+              <Ionicons
+                name={favorited ? 'bookmark' : 'bookmark-outline'}
+                size={24}
+                color={favorited ? colors.primary : colors.textPlaceholder}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {entry.meanings.map((meaning, i) => (
@@ -122,24 +130,36 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingBottom: 40,
   },
+  backBtn: {
+    marginLeft: 4,
+  },
   headerCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 24,
-    gap: 6,
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 4 },
     }),
   },
+  wordRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  wordMeta: {
+    flex: 1,
+    gap: 6,
+  },
   word: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#0f172a',
+    color: colors.textPrimary,
   },
   phonetic: {
     fontSize: 18,
-    color: '#2563eb',
+    color: colors.primary,
     fontWeight: '500',
   },
   meaningBlock: {
@@ -162,12 +182,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     fontStyle: 'italic',
-    color: '#0f172a',
+    color: colors.textPrimary,
   },
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: colors.border,
   },
   definitionItem: {
     flexDirection: 'row',
@@ -175,7 +195,7 @@ const styles = StyleSheet.create({
   },
   defNumber: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: colors.textPlaceholder,
     marginTop: 2,
     minWidth: 18,
   },
@@ -185,12 +205,12 @@ const styles = StyleSheet.create({
   },
   defText: {
     fontSize: 15,
-    color: '#374151',
+    color: colors.textSecondary,
     lineHeight: 22,
   },
   defExample: {
     fontSize: 14,
-    color: '#6b7280',
+    color: colors.textMuted,
     fontStyle: 'italic',
     lineHeight: 20,
   },
@@ -203,23 +223,23 @@ const styles = StyleSheet.create({
   },
   tagsLabel: {
     fontSize: 13,
-    color: '#9ca3af',
+    color: colors.textPlaceholder,
     fontWeight: '600',
   },
   tag: {
-    backgroundColor: '#eff6ff',
+    backgroundColor: colors.primaryLight,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
   tagText: {
     fontSize: 13,
-    color: '#2563eb',
+    color: colors.primary,
     fontWeight: '500',
   },
   source: {
     fontSize: 12,
-    color: '#d1d5db',
+    color: colors.borderLight,
     textAlign: 'center',
     marginTop: 8,
   },

@@ -53,15 +53,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    ...Platform.select({
-      ios: { paddingBottom: 24 },
-      android: { paddingBottom: 8 },
-      default: { paddingBottom: 8 },
-    }),
   },
   tabWrapper: {
     flex: 1,
     flexDirection: 'row',
+    alignItems: 'stretch',
   },
   divider: {
     width: 1,
@@ -73,6 +69,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: 10,
     gap: 3,
+    ...Platform.select({
+      ios: { paddingBottom: 24 },
+      android: { paddingBottom: 8 },
+      default: { paddingBottom: 8 },
+    }),
   },
   label: {
     fontSize: 11,
