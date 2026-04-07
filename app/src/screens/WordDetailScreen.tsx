@@ -7,6 +7,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useLayoutEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,10 +17,20 @@ import { RootStackParamList } from '../navigation/types';
 import { DictionaryEntry, Meaning } from '../types/dictionary';
 import { colors } from '../constants/colors';
 import { useFavorites } from '../hooks/useFavorites';
+import { fetchWord } from '../services/dictionaryApi';
 
 type Route = RouteProp<RootStackParamList, 'WordDetail'>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-function MeaningSection({ meaning }: { meaning: Meaning }) {
+function MeaningSection({
+  meaning,
+  onSynonymPress,
+  loadingSynonym,
+}: {
+  meaning: Meaning;
+  onSynonymPress: (word: string) => void;
+  loadingSynonym: string | null;
+}) {
   return (
     <View style={styles.meaningBlock}>
       <View style={styles.partOfSpeechRow}>
@@ -43,9 +54,14 @@ function MeaningSection({ meaning }: { meaning: Meaning }) {
         <View style={styles.tagsRow}>
           <Text style={styles.tagsLabel}>Synonyms: </Text>
           {meaning.synonyms.slice(0, 5).map((s, i) => (
-            <View key={i} style={styles.tag}>
+            <TouchableOpacity
+              key={i}
+              style={[styles.tag, loadingSynonym === s && styles.tagLoading]}
+              onPress={() => onSynonymPress(s)}
+              disabled={!!loadingSynonym}
+            >
               <Text style={styles.tagText}>{s}</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       )}
@@ -55,11 +71,12 @@ function MeaningSection({ meaning }: { meaning: Meaning }) {
 
 export default function WordDetailScreen() {
   const route = useRoute<Route>();
-  const navigation = useNavigation();
-  const { entries } = route.params;
+  const navigation = useNavigation<Nav>();
+  const { entries, breadcrumbs = [] } = route.params;
   const entry: DictionaryEntry = entries[0];
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const [playing, setPlaying] = useState(false);
+  const [loadingSynonym, setLoadingSynonym] = useState<string | null>(null);
 
   const phoneticObj = entry.phonetics.find(p => p.text && p.audio) ?? entry.phonetics.find(p => p.text);
   const phonetic = entry.phonetic ?? phoneticObj?.text;
@@ -93,8 +110,28 @@ export default function WordDetailScreen() {
     }
   };
 
+  const handleSynonymPress = async (word: string) => {
+    if (loadingSynonym) return;
+    setLoadingSynonym(word);
+    try {
+      const synEntries = await fetchWord(word);
+      navigation.push('WordDetail', {
+        entries: synEntries,
+        breadcrumbs: [...breadcrumbs, entry.word],
+      });
+    } catch {
+      alert(`"${word}" was not found in the dictionary`);
+    } finally {
+      setLoadingSynonym(null);
+    }
+  };
+
+  const breadcrumbTitle = [...breadcrumbs, entry.word].join(' / ');
+
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerTitle: breadcrumbs.length > 0 ? breadcrumbTitle : entry.word,
+      headerTitleStyle: { fontSize: 14, color: colors.primary },
       headerLeft: () => (
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.primary} />
@@ -102,7 +139,7 @@ export default function WordDetailScreen() {
       ),
       headerRight: undefined,
     });
-  }, []);
+  }, [breadcrumbs, entry.word]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -141,7 +178,12 @@ export default function WordDetailScreen() {
         </View>
 
         {entry.meanings.map((meaning, i) => (
-          <MeaningSection key={i} meaning={meaning} />
+          <MeaningSection
+            key={i}
+            meaning={meaning}
+            onSynonymPress={handleSynonymPress}
+            loadingSynonym={loadingSynonym}
+          />
         ))}
 
         {entry.sourceUrls?.length > 0 && (
@@ -271,6 +313,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 3,
+  },
+  tagLoading: {
+    opacity: 0.4,
   },
   tagText: {
     fontSize: 13,
